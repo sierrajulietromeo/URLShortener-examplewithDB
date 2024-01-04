@@ -1,0 +1,65 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+header, footer {
+  background:rgb(212, 233, 164);
+  padding: 8px;
+  border-radius: 3px; 
+}
+
+footer {
+  margin-top: 15px;
+}
+
+main {
+  margin-left: 10px;
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #f5fff5;
+}
+
+table th, table td {
+  border: 1px solid #ddd;
+}
+
+table th {
+  padding: 12px 8px;
+  text-align: left;
+  background-color: rgb(107, 182, 109);
+  color: white;    
+}
+
+table td {
+  padding: 8px;
+  word-break: break-all;
+}
+
+table tr:nth-child(even) {
+  background-color: #dff0de;
+}
+
+table tr:hover {
+  background-color: rgb(198, 207, 180);
+}
+
+form table {
+  width: 100%;
+  max-width: 600px;
+}
+
+form table td:nth-child(1) {
+  width: 10%;
+  white-space: nowrap;
+}
+
+main form input {
+  width: 100%;
+  min-width: 100px;
+  box-sizing: border-box;
+}
+
