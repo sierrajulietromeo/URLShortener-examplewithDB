@@ -1,75 +1,84 @@
-const { insertUrl, getUrl, incrementVisit } = require('../data/database');
+// Import the necessary functions from the database module.
+import { insertUrl, getUrl, incrementVisit } from '../data/database.js';
 
 
-function routes(app) {
-  // Route handler for '/'
-  app.get('/', function(req, res) {
-    getUrl('all', function (err, urls) { // use 'urls' instead of 'data'
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Server error");
-      }
-      let visitors = 0;
-      for (const url of urls) { // use 'urls' directly
-        visitors += url.visits; // Assumes 'visits' column exists in the database
-      }
-      let model = { urls, visitors };
-      res.render('home', model);
-    });
-  });
 
-  // Route handler for '/urls'
-  app.get('/urls', function(req, res) {
-    getUrl('all', function (err, urls) { // use 'urls' instead of 'data'
-      if (err) {
-        console.error(err);
-        return res.status(500).send("Server error");
-      }
-      let model = { urls }; // again, use 'urls' directly
-      console.log(model)
-      res.render('urls', model);
-    });
-  });
-
-  app.get('/add-url', function(req, res) {
-    let model = { url: "", shortCode: "newCode" };
-    res.render('add-url', model);
-  });
-
-  app.post('/add-url', function(req, res) {
-    const newUrl = req.body.url;
-    const shortCode = req.body.shortCode;
-    insertUrl(newUrl, shortCode, (err, urlData) => {
-      if (err) {
-        // Handle error, for instance when shortCode is not unique
-        console.error(err);
-        return res.status(500).send("Server error: " + err.message);
-      }
-      // Redirect to the URLs page after successful insertion
-      res.redirect('/urls');
-    });
-  });
-
-  app.get('/:shortCode', (req, res) => {
-    const { shortCode } = req.params;
-    
-      getUrl(shortCode, (err, urlEntry) => {
-        if (err) {
-          // Handle error
-          console.error(err);
-          return res.status(500).send("Server error");
-        }
-        if (urlEntry) {
-          incrementVisit(shortCode);
-          res.redirect(urlEntry.url); // Redirect to the original URL
-        } else {
-          res.status(404).send("Shortcode not found"); // Send a 404 not found response
-        }
-      });
-  });
-
-
+function handleError(res, err, message = "Server error", statusCode = 500) {
+  console.error(message, err);
+  res.status(statusCode).send(message);
 }
 
 
-module.exports = { routes };
+
+
+/**
+ * Set up routes for the web application.
+ *
+ * @param {object} app - The express application instance.
+ */
+function routes(app) {
+  // Route handler for the home page ('/').
+  app.get('/', async (req, res) => {
+    try {
+      const urls = await getUrl('all');
+      const visitors = urls.reduce((acc, url) => acc + url.visits, 0);
+      const model = { urls, visitors };
+      res.render('home', model);
+    } catch (err) {
+      handleError(res, err);
+    }
+  });
+
+  // Route handler to list all shortened URLs.
+  app.get('/urls', async (req, res) => {
+    try {
+      const urls = await getUrl('all');
+      const model = { urls };
+      console.log(model)
+      res.render('urls', model);
+    } catch (err) {
+      handleError(res, err);
+    }
+  });
+
+  // Route handler for the add new URL form page.
+  app.get('/add-url', (req, res) => {
+    const model = { url: "", shortCode: "newCode" };
+    res.render('add-url', model);
+  });
+
+  // Route handler for adding a new URL through POST request.
+  app.post('/add-url', async (req, res) => {
+    try {
+      const { url: newUrl, shortCode } = req.body;
+      if (!newUrl || !shortCode) {
+        return handleError(res, new Error('Missing URL or Short Code'), 'Invalid input', 400);
+      }
+      await insertUrl(newUrl, shortCode);
+      res.redirect('/urls');
+    } catch (err) {
+      handleError(res, err, "Server error: " + err.message);
+    }
+  });
+
+  // Route handler for redirecting a shortCode to its original URL.
+  app.get('/:shortCode', async (req, res) => {
+    try {
+      const { shortCode } = req.params;
+      const urlEntry = await getUrl(shortCode);
+      if (urlEntry) {
+        await incrementVisit(shortCode);
+        res.redirect(urlEntry.url);
+      } else {
+        handleError(res, new Error('Shortcode not found'), 'Shortcode not found', 404);
+      }
+    } catch (err) {
+      handleError(res, err);
+    }
+  });
+}
+
+
+export { routes };
+
+

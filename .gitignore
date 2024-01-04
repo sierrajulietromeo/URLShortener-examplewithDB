@@ -1,0 +1,6 @@
+# Ignore all hidden files and directories
+.*
+
+# But not these files...
+!.gitignore
+!.env
